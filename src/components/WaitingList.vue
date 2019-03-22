@@ -11,7 +11,7 @@
             <th scope="col">Created</th>
           </tr>
         </thead>
-        <draggable @change="log" v-model="list" tag="tbody">
+        <draggable @change="log" v-model="theList" tag="tbody">
           <tr v-for="item in theList" :key="item.name">
             <td scope="row">{{ item.id }}</td>
             <td>{{ item.name }}</td>
@@ -36,13 +36,6 @@ export default {
   data() {
     return {
       dragging: false,
-      list: [
-        { id: 549, name: "1", created: 1548247219 },
-        { id: 569, name: "22", created: 1553261906 },
-        { id: 570, name: "333", created: 1553261943 },
-        { id: 571, name: "4444", created: 1553261944 },
-        { id: 572, name: "5555", created: 1553261945 }
-      ]
     };
   },
   methods: {
@@ -52,32 +45,40 @@ export default {
       let newIndex = event.moved.newIndex;
 
       console.log("old", oldIndex, "new", newIndex);
-      // debugger;
-      let neighbour = 0;
-      if (newIndex < 0) {
-        neighbour = event.moved.newIndex + 1;
+
+      if (oldIndex > newIndex) {
+        this.moveUpQueue(oldIndex, newIndex)
       } else {
-        neighbour = event.moved.newIndex + 1;
+        this.moveDownQueue(oldIndex, newIndex)
+      }
+    },
+
+    async moveUpQueue(oldIndex, newIndex) {
+      let newTimestamp = this.list[newIndex].created;
+
+      let payload = {
+        index: oldIndex,
+        created: newTimestamp - 1
       }
 
-      let neighbourTimestamp = this.list[neighbour].created;
+      await this.$store.dispatch('GET_LIST_ITEM_CREATED', payload)
+    },
 
-      if (newIndex < 0 && oldIndex != 0) {
-        this.list[1].created = neighbourTimestamp - 1;
-      } else if (newIndex > 0) {
-        // debugger;
-        this.list[oldIndex].created = neighbourTimestamp - 1;
-      } else {
-        this.list[newIndex].created = neighbourTimestamp - 1;
+    async moveDownQueue(oldIndex, newIndex) {
+      let newTimestamp = this.list[newIndex].created;
+
+      let payload = {
+        index: oldIndex,
+        created: newTimestamp + 1
       }
 
-      this.list = this.list.sort((a, b) => a.created - b.created);
+      await this.$store.dispatch('GET_LIST_ITEM_CREATED', payload)
     }
   },
   computed: {
     theList: {
       get() {
-        return this.list;
+        return this.$store.getters.list.sort((a, b) => a.created - b.created);
       },
 
       set(value) {
