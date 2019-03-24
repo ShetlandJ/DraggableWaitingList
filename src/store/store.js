@@ -5,21 +5,71 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
-    list: [
-      { id: 549, name: "1", created: 1548247219 },
-      { id: 569, name: "22", created: 1553261906 },
-      { id: 570, name: "333", created: 1553261943 },
-      { id: 571, name: "4444", created: 1553261944 },
-      { id: 572, name: "5555", created: 1553261945 }
-    ]
+    list: [],
+    customOrderAdded: false
   },
   actions: {
-    GET_LIST(context, payload) {
-      context.commit("SET_LIST", payload);
+    // context.commit("SET_LIST", payload);
+    async GET_LIST(context, payload) {
+      try {
+        const url = "http://localhost:5000/";
+        const request = new Request(url, {
+          method: "GET",
+          credentials: "same-origin"
+        });
+
+        const response = await fetch(request);
+        const json = await response.json();
+
+        context.commit("SET_LIST", json);
+      } catch (error) {
+        console.error(error);
+      }
     },
 
-    GET_LIST_ITEM_CREATED(context, payload) {
-      context.commit("SET_LIST_ITEM_CREATED", payload);
+    async GET_CUSTOM_ORDER(context, payload) {
+      try {
+        const url = "http://localhost:5000/custom-order";
+        const request = new Request(url, {
+          method: "GET",
+          credentials: "same-origin"
+        });
+
+        const response = await fetch(request);
+        const json = await response.json();
+
+        context.commit("SET_CUSTOM_ORDER_ADDED", json);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+
+    async GET_CUSTOM_ORDER_NUMBER(context, payload) {
+      console.log("PAYLOAD", payload);
+      try {
+        const url = "http://localhost:5000/update-custom-order";
+        const request = new Request(url, {
+          method: "POST",
+          mode: "cors",
+          credentials: "same-origin",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify({payload}),
+          });
+
+        
+        const response = await fetch(request);
+        const json = await response.json();
+        
+        context.commit("SET_CUSTOM_ORDER_ADDED", json);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+
+    GET_LIST_ITEM_ORDER(context, payload) {
+      context.commit("SET_LIST_ITEM_ORDER", payload);
     }
   },
   mutations: {
@@ -27,10 +77,9 @@ export default new Vuex.Store({
       state.list = payload;
     },
 
-    SET_LIST_ITEM_CREATED(state, payload) {
-      state.list[payload.index].created = payload.created;
+    SET_CUSTOM_ORDER_ADDED(state, payload) {
+      state.customOrderAdded = true;
     }
-
   },
 
   getters: {

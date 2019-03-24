@@ -11,6 +11,9 @@ export default {
   name: "app",
   components: {
     WaitingList
+  },
+  created() {
+    this.$store.dispatch('GET_LIST');
   }
 };
 </script>

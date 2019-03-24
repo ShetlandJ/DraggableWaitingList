@@ -5,9 +5,16 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "node": "nodemon ./server.js"
   },
   "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "mssql": "^5.0.3",
+    "mysql2": "^1.6.5",
+    "nodemon": "^1.18.10",
+    "sequelize": "^5.1.0",
     "vue": "^2.6.6",
     "vuedraggable": "^2.19.3",
     "vuex": "^3.1.0"

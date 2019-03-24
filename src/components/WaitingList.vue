@@ -3,19 +3,21 @@
     <div class="col-8">
       <h3>Draggable table</h3>
 
+      <button @click="addCustomOrderToList">Re-arrange</button>
+
       <table class="table table-striped">
         <thead class="thead-dark">
           <tr>
             <th scope="col">Id</th>
-            <th scope="col">Name</th>
             <th scope="col">Created</th>
+            <th scope="col">customOrder</th>
           </tr>
         </thead>
-        <draggable @change="log" v-model="theList" tag="tbody">
-          <tr v-for="item in theList" :key="item.name">
-            <td scope="row">{{ item.id }}</td>
-            <td>{{ item.name }}</td>
+        <draggable @change="log" v-model="list" tag="tbody">
+          <tr v-for="item in list" :key="item.waitingListEntryId">
+            <td scope="row">{{ item.waitingListEntryId }}</td>
             <td>{{ item.created }}</td>
+            <td>{{ item.customOrder }}</td>
           </tr>
         </draggable>
       </table>
@@ -27,62 +29,100 @@
 import draggable from "vuedraggable";
 
 export default {
-  name: "table-example",
-  display: "Table",
-  order: 7,
+  // name: "table-example",
+  // display: "Table",
+  // order: 7,
   components: {
     draggable
   },
   data() {
     return {
-      dragging: false,
+      dragging: false
     };
   },
   methods: {
-    log(event) {
-      // debugger;
+    addCustomOrderToList() {
+      this.$store.dispatch("GET_CUSTOM_ORDER");
+    },
+
+    async log(event) {
       let oldIndex = event.moved.oldIndex;
       let newIndex = event.moved.newIndex;
 
-      console.log("old", oldIndex, "new", newIndex);
+      let newOrderNumber;
 
-      if (oldIndex > newIndex) {
-        this.moveUpQueue(oldIndex, newIndex)
+      if (this.itemsAreNeighbours(oldIndex, newIndex)) {
+        this.swapOrderNumbers(event, oldIndex, newIndex);
       } else {
-        this.moveDownQueue(oldIndex, newIndex)
+        newOrderNumber = this.getNewOrderNumber(newIndex);
+      }
+
+      debugger;
+
+      let payload = {
+        newOrderNumber: newOrderNumber,
+        waitingListEntryId: event.moved.element.waitingListEntryId
+      };
+
+      await this.$store.dispatch("GET_CUSTOM_ORDER_NUMBER", payload);
+      await this.$store.dispatch("GET_LIST");
+    },
+
+    getNewOrderNumber(newIndex) {
+      if (newIndex != 0) {
+        let oneUpCustomOrderNumber = this.list[newIndex - 1].customOrder;
+        let oneDownCustomOrderNumber = this.list[newIndex].customOrder;
+
+        let difference =
+          (oneDownCustomOrderNumber - oneUpCustomOrderNumber) / 2;
+
+        let newCustomOrderNumber = oneUpCustomOrderNumber + difference;
+
+        return newCustomOrderNumber;
+      } else {
+        let oneDownCustomOrderNumber = this.list[newIndex].customOrder;
+
+        let newCustomOrderNumber = oneDownCustomOrderNumber / 2;
+
+        return newCustomOrderNumber;
       }
     },
 
-    async moveUpQueue(oldIndex, newIndex) {
-      let newTimestamp = this.list[newIndex].created;
+    async swapOrderNumbers(event, oldIndex, newIndex) {
+      let movingItemCustomOrderNumber = this.list[oldIndex].customOrder;
+      let nonMovingItemCustomOrderNumber = this.list[newIndex].customOrder;
 
       let payload = {
-        index: oldIndex,
-        created: newTimestamp - 1
-      }
+        newOrderNumber: nonMovingItemCustomOrderNumber,
+        waitingListEntryId: event.moved.element.waitingListEntryId
+      };
 
-      await this.$store.dispatch('GET_LIST_ITEM_CREATED', payload)
+      await this.$store.dispatch("GET_CUSTOM_ORDER_NUMBER", payload);
+
+      let payload2 = {
+        newOrderNumber: movingItemCustomOrderNumber,
+        waitingListEntryId: this.list[newIndex].waitingListEntryId
+      };
+
+      await this.$store.dispatch("GET_CUSTOM_ORDER_NUMBER", payload2);
     },
 
-    async moveDownQueue(oldIndex, newIndex) {
-      let newTimestamp = this.list[newIndex].created;
-
-      let payload = {
-        index: oldIndex,
-        created: newTimestamp + 1
+    itemsAreNeighbours(oldIndex, newIndex) {
+      if (oldIndex - newIndex == 1 || oldIndex - newIndex == -1) {
+        return true;
       }
-
-      await this.$store.dispatch('GET_LIST_ITEM_CREATED', payload)
     }
   },
   computed: {
-    theList: {
+    list: {
       get() {
-        return this.$store.getters.list.sort((a, b) => a.created - b.created);
+        return this.$store.getters.list.sort(
+          (a, b) => a.customOrder - b.customOrder
+        );
       },
 
       set(value) {
-        this.list = value.sort((a, b) => a.created - b.created);
+        return value.sort((a, b) => a.customOrder - b.customOrder);
       }
     }
   }
